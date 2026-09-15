@@ -4,6 +4,10 @@ A modern desktop application built with Python (Tkinter) and [yt-dlp](https://gi
 
 Includes a cross-platform build script (`build.py`) to generate standalone executables for **Windows**, **macOS**, and **Linux**.
 
+<div align="center">
+  <img src="YT-downloader.png" width="500" alt="My awesome image">
+</div>
+
 ---
 
 ## Features
