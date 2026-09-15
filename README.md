@@ -1,200 +1,133 @@
 # YouTube Downloader GUI
 
-A simple desktop app to download YouTube videos and audio. Paste a URL, load available qualities, pick one, and save it to a folder of your choice.
+A modern desktop application built with Python (Tkinter) and [yt-dlp](https://github.com/yt-dlp/yt-dlp) to download YouTube videos, audio, and embedded subtitles.
 
-Built with Python, Tkinter, and [yt-dlp](https://github.com/yt-dlp/yt-dlp). Includes a cross-platform `build.py` script to compile into a standalone executable for Windows, macOS, or Linux.
+Includes a cross-platform build script (`build.py`) to generate standalone executables for **Windows**, **macOS**, and **Linux**.
 
 ---
 
 ## Features
 
-- Load available video and audio qualities for a YouTube URL
-- Clear quality labels such as `4K (2160p)`, `1080p (Full HD)`, `720p (HD)`
-- Choose **H.264 (MP4)** or **VP9 (WebM/MKV)** when both are available
-- Automatic **English subtitle downloading and embedding** into a single `.mkv` container (no extra `.vtt`/`.srt` clutter on disk)
-- Smart rate-limit protection (`subtitleslangs: ["en.*", "en"]`) to prevent `HTTP Error 429: Too Many Requests`
-- Progress bar with readable speed and ETA
-- Custom save folder (defaults to your Downloads folder)
-- Dark, modern interface
+- **Quality Selector:** Choose video resolution from 360p up to 4K (2160p) / 8K (4320p).
+- **Format Options:** Download as H.264 (MP4) for broad compatibility or VP9/AV1 (MKV) for efficiency.
+- **Embedded Subtitles:** Automatically downloads and embeds English subtitles directly into MKV containers.
+- **Rate-Limit Guard:** Optimized subtitle language fetching (`en.*`, `en`) to prevent YouTube HTTP 429 rate limits.
+- **Progress Tracking:** Real-time download speed, ETA, and progress bar.
+- **Custom Save Location:** Select any output directory (defaults to user Downloads folder).
 
 ---
 
-## Prerequisites & Installation
+## Prerequisites
 
-### 1. Install FFmpeg & System Packages
+### 1. Install FFmpeg
+FFmpeg is required by `yt-dlp` to merge video/audio streams and embed subtitles.
 
-FFmpeg is required to merge high-definition video and audio streams and embed subtitles.
-
-* **Windows**:
-  Install via `winget` in PowerShell:
+* **Windows (PowerShell):**
   ```powershell
   winget install FFmpeg
   ```
-  Or download from [ffmpeg.org](https://ffmpeg.org/download.html) and add `ffmpeg.exe` to your system `PATH`.
-
-* **Linux (Debian / Ubuntu)**:
-  Install FFmpeg and Python Tkinter:
-  ```bash
-  sudo apt update
-  sudo apt install ffmpeg python3-tk python3-pip
-  ```
-
-* **Linux (Fedora / RHEL)**:
-  ```bash
-  sudo dnf install ffmpeg python3-tkinter python3-pip
-  ```
-
-* **macOS**:
+* **macOS (Homebrew):**
   ```bash
   brew install ffmpeg
   ```
-
----
-
-### 2. Install Python Dependencies
-
-Clone or download this repository, then install requirements:
-
-**On Windows (PowerShell):**
-```powershell
-python -m pip install -r requirements.txt
-```
-
-**On Linux & macOS:**
-```bash
-python3 -m pip install -r requirements.txt
-```
-
-*(Optional: Virtual environment setup)*
-```bash
-# macOS / Linux
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
-
-# Windows (PowerShell)
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-```
-
----
-
-## Running & Building
-
-### Run directly from source
-
-* **Windows**:
-  ```powershell
-  python main.py
-  ```
-
-* **Linux & macOS**:
+* **Linux (Debian/Ubuntu):**
   ```bash
-  python3 main.py
+  sudo apt update && sudo apt install -y ffmpeg python3-tk python3-pip
   ```
-
----
-
-### Build a Standalone Executable (`build.py`)
-
-You can build a standalone executable locally for your operating system using `build.py`:
-
-* **Windows**:
-  ```powershell
-  python build.py
-  ```
-  *Generates:* `dist/YT-Downloader.exe`
-
-* **Linux**:
+* **Linux (Fedora):**
   ```bash
-  python3 build.py
+  sudo dnf install -y ffmpeg python3-tkinter python3-pip
   ```
-  *Generates:* `dist/YT-Downloader`
-
-* **macOS**:
+* **Linux (Arch):**
   ```bash
-  python3 build.py
+  sudo pacman -S ffmpeg tk python-pip
   ```
-  *Generates:* `dist/YT-Downloader.app`
-
-The build output will be placed in the `dist/` directory (which is gitignored).
 
 ---
 
-## How to Use
+## Quick Start (Run from Source)
 
-1. Paste a YouTube video URL into the **YouTube URL** field.
-2. Click **Load qualities**.
-3. Select a row from the quality list.
-   - Prefer **MP4 / H.264** for maximum player compatibility.
-   - Prefer **MKV / VP9** when you want a smaller file and embedded English subtitles in a single file.
-4. Optionally change the **Save to** folder with **Browse…**.
-5. Click **Download selected quality**.
-6. Wait for the progress bar to finish. Files are saved to the chosen folder.
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/your-username/yt-downloader-gui.git
+   cd yt-downloader-gui
+   ```
+
+2. **Install Python dependencies:**
+   ```bash
+   python -m pip install -r requirements.txt
+   ```
+   *(Note: Use `python3` on macOS/Linux if `python` points to Python 2).*
+
+3. **Run the application:**
+   ```bash
+   python main.py
+   ```
 
 ---
 
-## Quality & Container Guide
+## Building Executables (`build.py`)
 
-### Resolution Guide
+The repository includes `build.py`, a cross-platform build script using PyInstaller. Run it on your target OS to compile a standalone app.
 
-| Label | Vertical pixels |
-| --- | --- |
-| 8K (4320p) | 4320 |
-| 4K (2160p) | 2160 |
-| 1440p (QHD) | 1440 |
-| 1080p (Full HD) | 1080 |
-| 720p (HD) | 720 |
-| 480p / 360p / … | matching height |
+### 🪟 Windows (`.exe`)
+1. Open PowerShell or Command Prompt in the project folder.
+2. Install requirements and run `build.py`:
+   ```powershell
+   python -m pip install -r requirements.txt
+   python build.py
+   ```
+3. **Output:** `dist/YT-Downloader.exe`
 
-### Containers
+---
 
-| Choice | Typical result | Notes |
-| --- | --- | --- |
-| H.264 → **MP4** | Native YouTube H.264 + AAC | Best compatibility across older devices |
-| VP9/AV1 → **MKV** | Remuxed with Opus audio | Embeds English subtitles directly inside the single `.mkv` file |
-| **MP4** at 4K/1440p | Re-encoded to H.264 | Offered when YouTube has no native H.264 at that resolution |
+### 🍏 macOS (`.app`)
+1. Open Terminal in the project folder.
+2. Install requirements and run `build.py`:
+   ```bash
+   python3 -m pip install -r requirements.txt
+   python3 build.py
+   ```
+3. **Output:** `dist/YT-Downloader.app`
+
+---
+
+### 🐧 Linux (Standalone Binary)
+1. Ensure `python3-tk` (or `tk`) and `pip` are installed via your package manager.
+2. Install requirements and run `build.py`:
+   ```bash
+   python3 -m pip install -r requirements.txt
+   python3 build.py
+   ```
+3. **Output:** `dist/YT-Downloader`
 
 ---
 
 ## Troubleshooting
 
-| Problem | What to try |
+| Problem | Cause / Solution |
 | --- | --- |
-| `command not found: python` | Use `python3` (or install Python from python.org on Windows) |
-| `Could not load qualities` / SSL errors | Run `pip install -r requirements.txt` again (includes `certifi`) |
-| `HTTP Error 429: Too Many Requests` | Fixed automatically in this version by requesting English subtitles (`en.*`, `en`) instead of fetching 100+ languages |
-| Download finishes but video has no audio / merge fails | Install FFmpeg (`winget install FFmpeg` on Windows, `apt install ffmpeg` on Linux) |
-| App window does not open / `_tkinter` error | Install Tkinter package (`sudo apt install python3-tk` on Ubuntu/Debian) |
-| Very old or failing downloads | Update yt-dlp: `pip install -U yt-dlp` |
+| **Video has no audio / merge fails** | Ensure FFmpeg is installed and added to system PATH. |
+| **`HTTP Error 429: Too Many Requests`** | Protected in this version by requesting focused English subtitles (`en.*`). |
+| **`No module named '_tkinter'` (Linux)** | Install Tkinter package (e.g., `sudo apt install python3-tk`). |
+| **Outdated yt-dlp / download errors** | Update `yt-dlp`: `pip install -U yt-dlp` |
 
 ---
 
-## Testing
-
-Run the test suite:
-
-```bash
-python3 -m unittest discover -s tests
-```
-
----
-
-## Project Layout
+## Project Structure
 
 ```
 yt-downloader-gui/
-├── main.py              # Tkinter GUI Application
-├── build.py             # PyInstaller build script for creating executables
+├── main.py              # Main Tkinter GUI application
+├── build.py             # Cross-platform PyInstaller build script
 ├── requirements.txt     # Python dependencies
-├── tests/               # Unit test suite
+├── tests/               # Unit tests
 ├── .gitignore           # Git ignore rules
-└── README.md            # Project documentation
+└── README.md            # Documentation
 ```
 
 ---
 
 ## License
 
-Use and modify freely for personal projects. Respect YouTube’s terms of service and copyright law when downloading content.
+MIT License. Free for personal and commercial use.
