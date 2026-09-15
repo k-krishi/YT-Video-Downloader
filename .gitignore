@@ -1,0 +1,51 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+
+# Testing & Cache
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# IDEs and Editors
+.cursor/
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Operating System Files
+.DS_Store
+.DS_Store?
+ehthumbs.db
+Thumbs.db
+
+# Output media & subtitle files created during local testing
+*.mp4
+*.mkv
+*.webm
+*.m4a
+*.mp3
+*.vtt
+*.srt
+*.ass
+*.part
+*.ytdl
+
+# PyInstaller build outputs
+build/
+dist/
+*.spec
+

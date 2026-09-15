@@ -1,0 +1,70 @@
+name: Build Cross-Platform Executables
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            artifact_name: YT-Downloader-Windows.exe
+            build_artifact_path: dist/YT-Downloader.exe
+            asset_name: YT-Downloader-Windows.exe
+          - os: macos-latest
+            artifact_name: YT-Downloader-macOS
+            build_artifact_path: dist/YT-Downloader.app
+            asset_name: YT-Downloader-macOS.zip
+          - os: ubuntu-latest
+            artifact_name: YT-Downloader-Linux
+            build_artifact_path: dist/YT-Downloader
+            asset_name: YT-Downloader-Linux
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Build Executable with PyInstaller
+        run: |
+          python build.py
+
+      - name: Prepare macOS zip artifact
+        if: runner.os == 'macOS'
+        run: |
+          cd dist
+          zip -r YT-Downloader-macOS.zip YT-Downloader.app YT-Downloader
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: |
+            ${{ matrix.os == 'macos-latest' && 'dist/YT-Downloader-macOS.zip' || matrix.build_artifact_path }}
+
+      - name: Release Assets (on Tag Release)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ matrix.os == 'macos-latest' && 'dist/YT-Downloader-macOS.zip' || matrix.build_artifact_path }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
