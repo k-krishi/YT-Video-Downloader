@@ -91,8 +91,16 @@ class TestSubtitleOptions(unittest.TestCase):
             self.assertIsNotNone(resolved)
             self.assertEqual(resolved, mkv_file)
 
+    def test_find_ffmpeg(self) -> None:
+        from main import _find_ffmpeg
+        ffmpeg_path = _find_ffmpeg()
+        # On systems with ffmpeg installed, it returns a string path ending in ffmpeg
+        if ffmpeg_path:
+            self.assertTrue(ffmpeg_path.endswith("ffmpeg") or ffmpeg_path.endswith("ffmpeg.exe"))
+
 
 if __name__ == "__main__":
     unittest.main()
+
 
 

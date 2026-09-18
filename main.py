@@ -300,9 +300,47 @@ def _cleanup_external_subtitles(output_dir: Path, stem: str) -> None:
 
 
 
+def _find_ffmpeg() -> str | None:
+    """Locate ffmpeg executable in PATH or common macOS/Linux/Windows system paths."""
+    found = shutil.which("ffmpeg")
+    if found:
+        return found
+
+    candidates = [
+        Path("/opt/homebrew/bin/ffmpeg"),
+        Path("/usr/local/bin/ffmpeg"),
+        Path("/opt/local/bin/ffmpeg"),
+        Path.home() / ".local/bin/ffmpeg",
+        Path.home() / "bin/ffmpeg",
+    ]
+    if os.name == "nt":
+        candidates.extend(
+            [
+                Path("C:/ffmpeg/bin/ffmpeg.exe"),
+                Path("C:/Program Files/ffmpeg/bin/ffmpeg.exe"),
+            ]
+        )
+        localappdata = os.environ.get("LOCALAPPDATA")
+        if localappdata:
+            candidates.append(Path(localappdata) / "Microsoft/WinGet/Links/ffmpeg.exe")
+
+    for p in candidates:
+        if p.is_file() and os.access(p, os.X_OK):
+            parent_str = str(p.parent)
+            current_path = os.environ.get("PATH", "")
+            if parent_str not in current_path.split(os.pathsep):
+                os.environ["PATH"] = f"{parent_str}{os.pathsep}{current_path}"
+            return str(p)
+
+    return None
+
+
+_find_ffmpeg()
+
+
 def _convert_to_compatible_mp4(source: Path, destination: Path) -> None:
     """Re-encode to H.264/AAC MP4 that plays in QuickTime, VLC, browsers, etc."""
-    ffmpeg = shutil.which("ffmpeg")
+    ffmpeg = _find_ffmpeg()
     if not ffmpeg:
         raise RuntimeError("FFmpeg is required to convert VP9/AV1 to MP4. Install ffmpeg and try again.")
 
@@ -903,6 +941,10 @@ class YouTubeDownloaderApp:
                 "noplaylist": True,
                 "skip_download": True,
             }
+            ffmpeg_path = _find_ffmpeg()
+            if ffmpeg_path:
+                ydl_opts["ffmpeg_location"] = ffmpeg_path
+
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=False)
 
@@ -1003,6 +1045,31 @@ class YouTubeDownloaderApp:
         stem = _unique_output_stem(output_dir, sanitize_filename(title_hint, restricted=False))
         self.root.after(0, self._append_log, f"Saving as: {stem}")
 
+        ffmpeg_path = _find_ffmpeg()
+        needs_ffmpeg = (
+            "+" in selected.format_selector
+            or bool(selected.merge_output_format)
+            or bool(selected.remux_video)
+            or bool(selected.recode_video)
+            or selected.embed_subtitles
+        )
+        if needs_ffmpeg and not ffmpeg_path:
+            error_msg = (
+                "FFmpeg is not installed or could not be found.\n\n"
+                "Merging video and audio formats requires FFmpeg.\n\n"
+                "Please install FFmpeg on your system:\n"
+                " • macOS: brew install ffmpeg\n"
+                " • Ubuntu/Debian: sudo apt update && sudo apt install -y ffmpeg\n"
+                " • Fedora: sudo dnf install -y ffmpeg\n"
+                " • Arch Linux: sudo pacman -S ffmpeg\n"
+                " • Windows: winget install ffmpeg"
+            )
+            self.root.after(0, self._set_status, "Download failed: FFmpeg required.")
+            self.root.after(0, self._append_log, "Error: FFmpeg is required to merge multiple formats.")
+            self.root.after(0, messagebox.showerror, "FFmpeg Required", error_msg)
+            self.root.after(0, self._set_busy, False)
+            return
+
         ydl_opts: dict = {
             "format": selected.format_selector,
             "outtmpl": str(output_dir / f"{stem}.%(ext)s"),
@@ -1012,6 +1079,8 @@ class YouTubeDownloaderApp:
             "no_warnings": True,
             "overwrites": False,
         }
+        if ffmpeg_path:
+            ydl_opts["ffmpeg_location"] = ffmpeg_path
 
         # VP9/AV1 → MP4: download/merge as MKV, then re-encode ourselves (compatible H.264).
         if selected.recode_video:
@@ -1082,13 +1151,25 @@ class YouTubeDownloaderApp:
                 f"Saved to:\n{saved_path if saved_path else output_dir}",
             )
         except Exception as exc:
+            err_str = str(exc)
+            if "ffmpeg is not installed" in err_str.lower():
+                err_str = (
+                    "FFmpeg is not installed or could not be found.\n\n"
+                    "Merging video and audio formats requires FFmpeg.\n\n"
+                    "Please install FFmpeg on your system:\n"
+                    " • macOS: brew install ffmpeg\n"
+                    " • Ubuntu/Debian: sudo apt update && sudo apt install -y ffmpeg\n"
+                    " • Fedora: sudo dnf install -y ffmpeg\n"
+                    " • Arch Linux: sudo pacman -S ffmpeg\n"
+                    " • Windows: winget install ffmpeg"
+                )
             self.root.after(0, self._set_status, "Download failed.")
             self.root.after(0, self._append_log, f"Error: {exc}")
             self.root.after(
                 0,
                 messagebox.showerror,
                 "Download failed",
-                str(exc),
+                err_str,
             )
         finally:
             self.root.after(0, self._set_busy, False)
